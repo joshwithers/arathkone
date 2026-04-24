@@ -1,0 +1,29 @@
+{
+  "name": "arathkone",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/prepare-images.mjs && astro dev",
+    "start": "node scripts/prepare-images.mjs && astro dev",
+    "build": "node scripts/prepare-images.mjs && astro build && node scripts/strip-exif.mjs",
+    "preview": "astro preview",
+    "describe": "node scripts/describe-photos.mjs",
+    "prepare-images": "node scripts/prepare-images.mjs",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.88.0",
+    "astro": "^6.1.7",
+    "js-yaml": "^4.1.0",
+    "sharp": "^0.34.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/js-yaml": "^4.0.9",
+    "autoprefixer": "^10.4.21",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,25 @@
+shoot:
+  title: "Highball Goes Country"
+  date: "2026-04-19"
+  location: "Black Spur Drive, Victoria"
+  blurb: "What a day. It was fantastic seeing all your incredible cars at the Spur and during Highball."
+  hero: "hero.jpg"
+
+photographer:
+  name: "Dan Campbell"
+  location: "Melbourne, Australia"
+  portrait: "/arathkone.jpg"
+  portrait_credit: "Carter Boys (850Visuals)"
+  bio: "I enjoy taking photos and have been doing so for many years. Canon 6D mk II and Google Pixel for digital. Canon AE-IP, T70 and 3000N for film."
+  kofi: "https://ko-fi.com/arathkone"
+  threads: "https://www.threads.com/@arathkone"
+  vero: "https://vero.co/arathkone"
+  instagram: "https://www.instagram.com/Arathkone"
+  fotoapp: "https://the.fotoapp.co/arathkone"
+
+download:
+  size: "original"     # "original" or a pixel value for the long edge (e.g. 2048)
+  strip_exif: false     # default on — set false to preserve GPS and timestamps
+
+site:
+  domain: "arathkone.pages.dev"

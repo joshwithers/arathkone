@@ -1,0 +1,164 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PhotoCard from '../components/PhotoCard.astro';
+import { loadShoot, webSrc, webSrcSet, type Photo } from '../lib/config';
+import photosData from '../data/photos.json';
+
+const shoot = loadShoot();
+const photos = (photosData as Photo[]).filter((p) => p.filename !== shoot.shoot.hero);
+const heroSrc = webSrc(shoot.shoot.hero, 2048);
+const heroSrcSet = webSrcSet(shoot.shoot.hero, [1024, 1600, 2048]);
+
+const shootDate = new Date(shoot.shoot.date);
+const dateLabel = shootDate.toLocaleDateString('en-AU', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+---
+
+<BaseLayout title={shoot.shoot.title}>
+  <section class="relative h-[88vh] min-h-[560px] w-full overflow-hidden">
+    <img
+      src={heroSrc}
+      srcset={heroSrcSet}
+      sizes="100vw"
+      alt={`${shoot.shoot.title} — ${shoot.shoot.location}`}
+      class="absolute inset-0 h-full w-full object-cover"
+      fetchpriority="high"
+      decoding="async"
+    />
+    <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/60"></div>
+    <div class="relative h-full flex flex-col justify-end px-6 md:px-10 pb-14 md:pb-20 max-w-6xl mx-auto">
+      <p class="text-sm md:text-base text-stone-100/80 tabular tracking-wide uppercase mb-4">
+        {dateLabel} · {shoot.shoot.location}
+      </p>
+      <h1 class="font-display text-5xl md:text-7xl lg:text-8xl text-white tracking-tight leading-[0.95]">
+        {shoot.shoot.title}
+      </h1>
+      <p class="mt-6 max-w-xl text-base md:text-lg text-stone-100/90 leading-relaxed">
+        {shoot.shoot.blurb}
+      </p>
+      <p class="mt-8 text-sm text-stone-100/70">
+        Photographs by {shoot.photographer.name}
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 md:px-10 py-20 md:py-28">
+    {photos.length === 0 ? (
+      <p class="text-center text-stone-500 dark:text-stone-400 py-20">
+        Photos are being prepared. Check back shortly.
+      </p>
+    ) : (
+      <>
+        <div class="mb-10 md:mb-14 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <label class="relative w-full md:max-w-md block">
+            <svg
+              class="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500 dark:text-stone-400 pointer-events-none"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7"/>
+              <path d="M21 21l-4.5-4.5"/>
+            </svg>
+            <input
+              type="search"
+              id="photo-search"
+              autocomplete="off"
+              placeholder="Search captions, descriptions, tags…"
+              class="w-full bg-transparent border-b border-stone-300 dark:border-stone-700 py-3 pl-7 pr-10 text-base placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-900 dark:focus:border-stone-100 transition-colors"
+            />
+            <button
+              type="button"
+              id="clear-search"
+              class="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 transition-all opacity-0 pointer-events-none"
+              aria-label="Clear search"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </label>
+          <p id="search-count" class="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400 tabular min-h-[1em]" aria-live="polite"></p>
+        </div>
+
+        <div id="photo-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          {photos.map((photo, i) => (
+            <PhotoCard photo={photo} eager={i < 3} />
+          ))}
+        </div>
+
+        <p id="no-results" class="hidden text-center text-stone-500 dark:text-stone-400 py-20 font-display text-xl tracking-tight">
+          No photos match that search.
+        </p>
+      </>
+    )}
+  </section>
+
+  <script>
+    const init = () => {
+      const input = document.getElementById('photo-search') as HTMLInputElement | null;
+      const clear = document.getElementById('clear-search') as HTMLButtonElement | null;
+      const grid = document.getElementById('photo-grid');
+      const empty = document.getElementById('no-results');
+      const count = document.getElementById('search-count');
+      if (!input || !grid) return;
+      if (input.dataset.bound) return;
+      input.dataset.bound = 'true';
+
+      const cards = Array.from(grid.querySelectorAll<HTMLElement>('[data-search]'));
+      const total = cards.length;
+
+      const update = () => {
+        const q = input.value.trim().toLowerCase();
+        const terms = q.split(/\s+/).filter(Boolean);
+        let matches = 0;
+        for (const card of cards) {
+          const hay = card.dataset.search ?? '';
+          const match = terms.length === 0 || terms.every((t) => hay.includes(t));
+          card.style.display = match ? '' : 'none';
+          if (match) matches++;
+        }
+        if (q === '') {
+          if (count) count.textContent = '';
+          if (clear) { clear.classList.add('opacity-0', 'pointer-events-none'); }
+          empty?.classList.add('hidden');
+        } else {
+          if (count) count.textContent = `${matches} of ${total}`;
+          if (clear) { clear.classList.remove('opacity-0', 'pointer-events-none'); }
+          if (empty) empty.classList.toggle('hidden', matches !== 0);
+        }
+      };
+
+      input.addEventListener('input', update);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { input.value = ''; update(); }
+      });
+      clear?.addEventListener('click', () => {
+        input.value = '';
+        update();
+        input.focus();
+      });
+    };
+
+    init();
+    document.addEventListener('astro:after-swap', init);
+  </script>
+
+  {photos.length > 0 && (
+    <section class="mx-auto max-w-3xl px-6 md:px-10 pb-16 text-center">
+      <p class="font-display text-2xl md:text-3xl tracking-tight text-stone-800 dark:text-stone-200">
+        Spotted your car?
+      </p>
+      <p class="mt-3 text-sm md:text-base text-stone-600 dark:text-stone-400 leading-relaxed">
+        Every photo is a free download. If one of them landed, you can
+        <a
+          href={shoot.photographer.kofi}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="border-b border-stone-500 hover:border-stone-900 dark:hover:border-stone-100 transition-colors"
+        >shout Dan a coffee</a>. No pressure.
+      </p>
+    </section>
+  )}
+</BaseLayout>

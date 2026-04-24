@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PhotoCard from '../../components/PhotoCard.astro';
+import { loadShoot, type Photo } from '../../lib/config';
+
+export async function getStaticPaths() {
+  const { loadShoot } = await import('../../lib/config');
+  const shoot = loadShoot();
+  const all = (await import('../../data/photos.json')).default as Photo[];
+  const photos = all.filter((p) => p.filename !== shoot.shoot.hero);
+
+  const byTag = new Map<string, Photo[]>();
+  for (const photo of photos) {
+    for (const raw of photo.tags) {
+      const tag = String(raw).toLowerCase().trim();
+      if (!tag) continue;
+      const list = byTag.get(tag) ?? [];
+      list.push(photo);
+      byTag.set(tag, list);
+    }
+  }
+
+  return Array.from(byTag.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([tag, photos]) => ({
+      params: { tag },
+      props: { tag, photos },
+    }));
+}
+
+interface Props {
+  tag: string;
+  photos: Photo[];
+}
+
+const { tag, photos } = Astro.props;
+const shoot = loadShoot();
+const count = photos.length;
+---
+
+<BaseLayout
+  title={`#${tag}`}
+  description={`${count} photo${count === 1 ? '' : 's'} tagged "${tag}" from ${shoot.shoot.title}.`}
+>
+  <section class="mx-auto max-w-6xl px-6 md:px-10 pt-20 md:pt-28 pb-10">
+    <a
+      href="/"
+      class="inline-flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
+    >
+      <span aria-hidden="true">←</span>
+      {shoot.shoot.title}
+    </a>
+    <p class="mt-10 text-xs uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+      Tag
+    </p>
+    <h1 class="mt-2 font-display text-5xl md:text-7xl tracking-tight leading-[0.95]">
+      {tag}
+    </h1>
+    <p class="mt-5 text-sm text-stone-500 dark:text-stone-400 tabular">
+      {count} photo{count === 1 ? '' : 's'}
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 md:px-10 pb-10 md:pb-20">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+      {photos.map((photo, i) => (
+        <PhotoCard photo={photo} eager={i < 3} />
+      ))}
+    </div>
+  </section>
+</BaseLayout>
